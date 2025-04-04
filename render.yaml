@@ -2,7 +2,7 @@ services:
   - type: web
     name: jobportal-backend
     runtime: java
-    javaVersion: 21  # Explicitly specifying Java 21
+    javaVersion: 17  # Using LTS version supported by Render
     buildCommand: ./mvnw clean package -DskipTests
     startCommand: java -jar target/*.jar
     envVars:
@@ -24,8 +24,8 @@ services:
         value: resumestoragehiihello
       - key: APP_SECRET_KEY
         value: ${SECRET_KEY}
-      - key: JAVA_TOOL_OPTIONS  
+      - key: JAVA_TOOL_OPTIONS
         value: -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
     plan: free
-    healthCheckPath: /actuator/health 
+    healthCheckPath: /actuator/health
     autoDeploy: true
