@@ -1,7 +1,13 @@
-FROM eclipse-temurin:21-jdk-jammy as builder
+FROM eclipse-temurin:21-jdk-jammy AS builder
+
 WORKDIR /workspace
-COPY . .
-RUN ./mvnw clean package -DskipTests
+RUN apt-get update && apt-get install -y maven
+
+COPY pom.xml .
+COPY src src
+
+
+RUN mvn clean package -DskipTests -B
 
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app

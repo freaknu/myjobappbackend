@@ -1,30 +1,24 @@
-services:
-  - type: web
-    name: jobportal-backend
-    runtime: docker
-    dockerfilePath: Dockerfile
-    buildCommand: ./mvnw clean package -DskipTests
-    envVars:
-      - key: SPRING_APPLICATION_NAME
-        value: jobportal
-      - key: SPRING_DATA_REDIS_URL
-        value: redis://default:${REDIS_PASSWORD}@redis-11249.crce179.ap-south-1-1.ec2.redns.redis-cloud.com:11249
-      - key: SPRING_DATA_MONGODB_URI
-        value: mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@prabhat.4yrks.mongodb.net/Prabhat?retryWrites=true&w=majority
-      - key: SPRING_DATA_MONGODB_AUTO_INDEX_CREATION
-        value: "true"
-      - key: AWS_ACCESS_KEY_ID
-        value: ${AWS_ACCESS_KEY}
-      - key: AWS_SECRET_ACCESS_KEY
-        value: ${AWS_SECRET_KEY}
-      - key: AWS_REGION
-        value: eu-north-1
-      - key: S3_BUCKET_NAME
-        value: resumestoragehiihello
-      - key: APP_SECRET_KEY
-        value: ${SECRET_KEY}
-      - key: JAVA_TOOL_OPTIONS
-        value: -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
-    plan: free
-    healthCheckPath: /actuator/health
-    autoDeploy: true
+envVars:
+  - key: SPRING_APPLICATION_NAME
+    value: jobportal
+  - key: SPRING_DATA_MONGODB_URI
+    value: mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@prabhat.4yrks.mongodb.net/Prabhat?retryWrites=true&w=majority
+  - key: SPRING_DATA_MONGODB_AUTO_INDEX_CREATION
+    value: "true"
+  
+  - key: SPRING_DATA_REDIS_URL
+    value: redis://default:${REDIS_PASSWORD}@redis-11249.crce179.ap-south-1-1.ec2.redns.redis-cloud.com:11249
+  - key: AWS_ACCESS_KEY_ID
+    value: ${AWS_ACCESS_KEY}
+  - key: AWS_SECRET_ACCESS_KEY
+    value: ${AWS_SECRET_KEY}
+  - key: AWS_REGION
+    value: eu-north-1
+  - key: S3_BUCKET_NAME
+    value: resumestoragehiihello
+  
+  - key: APP_SECRET_KEY
+    value: ${SECRET_KEY}
+
+  - key: JAVA_TOOL_OPTIONS
+    value: -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
