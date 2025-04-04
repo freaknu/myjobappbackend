@@ -11,10 +11,10 @@ services:
       - key: SPRING_DATA_MONGODB_URI
         value: mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@prabhat.4yrks.mongodb.net/Prabhat?retryWrites=true&w=majority
       - key: AWS_ACCESS_KEY_ID
-        value: ${AWS_ACCESS_KEY}
+        value: "YOUR_AWS_ACCESS_KEY_HERE"
       - key: AWS_SECRET_ACCESS_KEY
-        value: ${AWS_SECRET_KEY}
+        value: "YOUR_AWS_SECRET_KEY_HERE"
       - key: APP_SECRET_KEY
-        value: ${SECRET_KEY}
+        value: "YOUR_SECRET_KEY_HERE"
     plan: free
     healthCheckPath: /actuator/health
