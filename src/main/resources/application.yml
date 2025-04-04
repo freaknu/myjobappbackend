@@ -22,4 +22,4 @@ cloud:
       bucket: ${S3_BUCKET_NAME}
 
 app:
-  secret-key: ${APP_SECRET_KEY}
+  secret-key: ${APP_SECRET_KEY}  
