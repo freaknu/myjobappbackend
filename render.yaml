@@ -2,7 +2,7 @@ services:
   - type: web
     name: jobportal-backend
     runtime: docker
-    dockerfile: Dockerfile
+    dockerfilePath: Dockerfile
     buildCommand: ./mvnw clean package -DskipTests
     envVars:
       - key: SPRING_APPLICATION_NAME
