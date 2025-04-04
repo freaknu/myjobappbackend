@@ -1,25 +1,55 @@
+# server:
+#   port: 8080
+
+# spring:
+#   application:
+#     name: ${SPRING_APPLICATION_NAME}
+#   data:
+#     redis:
+#       url: ${SPRING_DATA_REDIS_URL}
+#     mongodb:
+#       write-concern: "majority"
+#       database: ${SPRING_DATA_MONGODB_DATABASE:Prabhat}
+#       uri: ${SPRING_DATA_MONGODB_URI}
+#       auto-index-creation: ${SPRING_DATA_MONGODB_AUTO_INDEX_CREATION:true}
+
+# cloud:
+#   aws:
+#     credentials:
+#       access-key: ${AWS_ACCESS_KEY_ID}
+#       secret-key: ${AWS_SECRET_ACCESS_KEY}
+#     region:
+#       static: ${AWS_REGION}
+#     s3:
+#       bucket: ${S3_BUCKET_NAME}
+
+# app:
+#   secret-key: ${APP_SECRET_KEY} 
+
 server:
   port: 8080
 
 spring:
   application:
-    name: ${SPRING_APPLICATION_NAME}
+    name: jobportal
   data:
     redis:
-      url: ${SPRING_DATA_REDIS_URL}
+      url: redis://default:yhVWqDcAtqmnc0F9d2aLkkIdTm4TkqYB@redis-11249.crce179.ap-south-1-1.ec2.redns.redis-cloud.com:11249
     mongodb:
-      uri: ${SPRING_DATA_MONGODB_URI}
+      write-concern: "majority"
+      database: ${SPRING_DATA_MONGODB_DATABASE:Prabhat}
+      uri: mongodb+srv://Prabhat:m9iKSH2yV7YUyUc8@prabhat.4yrks.mongodb.net/Prabhat?retryWrites=true&w=majority
       auto-index-creation: ${SPRING_DATA_MONGODB_AUTO_INDEX_CREATION:true}
 
 cloud:
   aws:
     credentials:
-      access-key: ${AWS_ACCESS_KEY_ID}
-      secret-key: ${AWS_SECRET_ACCESS_KEY}
+      access-key: AKIASZC45LF7ABZGVQXB
+      secret-key: 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
     region:
-      static: ${AWS_REGION}
+      static: eu-north-1
     s3:
-      bucket: ${S3_BUCKET_NAME}
+      bucket: resumestoragehiihello
 
 app:
-  secret-key: ${APP_SECRET_KEY}  
+  secret-key: "y83u47hds13fdwbfy83u47hds13fdwbfy83u47hds13fdwbf" 
