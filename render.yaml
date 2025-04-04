@@ -1,22 +1,21 @@
-deploy:
-  type: web
-  name: jobportal-backend
-  runtime: docker
-  dockerfilePath: Dockerfile
-  envVars:
-    - key: SPRING_PROFILES_ACTIVE
-      value: production
-    - key: SPRING_DATA_REDIS_URL
-      value: redis://default:${REDIS_PASSWORD}@redis-11249.crce179.ap-south-1-1.ec2.redns.redis-cloud.com:11249
-    - key: SPRING_DATA_MONGODB_URI
-      value: mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@prabhat.4yrks.mongodb.net/Prabhat?retryWrites=true&w=majority
-    - key: AWS_ACCESS_KEY_ID
-      value: "YOUR_AWS_ACCESS_KEY_HERE"
-    - key: AWS_SECRET_ACCESS_KEY
-      value: "YOUR_AWS_SECRET_KEY_HERE"
-    - key: S3_BUCKET_NAME
-      value: "your-s3-bucket-name-here"
-    - key: APP_SECRET_KEY
-      value: "YOUR_BASE64_ENCODED_SECRET_KEY_HERE"
-  plan: free
-  healthCheckPath: /actuator/health
+services:
+  - name: jobportal-backend
+    runtime: docker
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+      - key: SPRING_DATA_REDIS_URL
+        value: redis://default:${REDIS_PASSWORD}@redis-11249.crce179.ap-south-1-1.ec2.redns.redis-cloud.com:11249
+      - key: SPRING_DATA_MONGODB_URI
+        value: mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@prabhat.4yrks.mongodb.net/Prabhat?retryWrites=true&w=majority
+      - key: AWS_ACCESS_KEY_ID
+        value: "YOUR_AWS_ACCESS_KEY_HERE"
+      - key: AWS_SECRET_ACCESS_KEY
+        value: "YOUR_AWS_SECRET_KEY_HERE"
+      - key: S3_BUCKET_NAME
+        value: "your-s3-bucket-name-here"
+      - key: APP_SECRET_KEY
+        value: "YOUR_BASE64_ENCODED_SECRET_KEY_HERE"
+    healthcheckPath: /actuator/health
+    plan: free
