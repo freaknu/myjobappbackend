@@ -32,6 +32,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers("/actuator/health").permitAll();
                     auth.requestMatchers("jobseeker/auth/**").permitAll();
                     auth.requestMatchers("/jobprovider/**").hasAuthority("JOBPROVIDER");
                     auth.requestMatchers("/jobseeker/**").hasAnyAuthority("JOBSEEKER", "JOBPROVIDER");
