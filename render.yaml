@@ -1,4 +1,3 @@
-services:
   - type: web
     name: jobportal-backend
     runtime: docker
@@ -14,6 +13,8 @@ services:
         value: "YOUR_AWS_ACCESS_KEY_HERE"
       - key: AWS_SECRET_ACCESS_KEY
         value: "YOUR_AWS_SECRET_KEY_HERE"
+      - key: S3_BUCKET_NAME
+        value: "your-s3-bucket-name-here"
       - key: APP_SECRET_KEY
         value: "YOUR_SECRET_KEY_HERE"
     plan: free
