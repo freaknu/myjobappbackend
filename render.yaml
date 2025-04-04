@@ -1,7 +1,9 @@
 services:
-  - name: jobportal-backend
-    runtime: docker
+  - type: web
+    name: jobportal-backend
+    env: docker
     dockerfilePath: Dockerfile
+    plan: free
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: production
@@ -17,5 +19,4 @@ services:
         value: "your-s3-bucket-name-here"
       - key: APP_SECRET_KEY
         value: "YOUR_BASE64_ENCODED_SECRET_KEY_HERE"
-    healthcheckPath: /actuator/health
-    plan: free
+    healthCheckPath: /actuator/health
