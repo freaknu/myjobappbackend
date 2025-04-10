@@ -15,27 +15,11 @@ public interface JobinfoRepository extends MongoRepository<JobInfo, String> {
     @Query("{ 'jobposteruseremail' : ?0 }")
     List<JobInfo> findByJobposteruseremail(String useremail);
 
-    @Query("""
-            { $and: [
-                { 'technology': { $regex: ?0, $options: 'i' } },
-                { 'jobname': { $regex: ?1, $options: 'i' } }
-            ]}
-            """)
-    List<JobInfo> findByTechnologyAndJobnameContainingIgnoreCase(String technology, String keyword);
-
     @Query("{ 'technology': { $regex: ?0, $options: 'i' } }")
     List<JobInfo> findByTechnologyContainingIgnoreCase(String technology);
 
     @Query("{ 'technology': { $in: ?0 } }")
     List<JobInfo> findByTechnologiesIn(List<String> technologies);
-
-    @Query("""
-            { $and: [
-                { 'technology': { $in: ?0 } },
-                { 'jobname': { $regex: ?1, $options: 'i' } }
-            ]}
-            """)
-    List<JobInfo> findByTechnologiesInAndJobnameContainingIgnoreCase(List<String> technologies, String keyword);
 
     @Query("{ 'jobname': { $regex: ?0, $options: 'i' } }")
     List<JobInfo> findByJobnameContainingIgnoreCase(String keyword);

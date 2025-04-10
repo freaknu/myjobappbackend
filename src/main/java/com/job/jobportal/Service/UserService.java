@@ -2,78 +2,50 @@ package com.job.jobportal.Service;
 
 import com.job.jobportal.Model.UserInfo;
 import com.job.jobportal.Repository.UserInfoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
-    @Autowired
-    private UserInfoRepository userRepo;
+    private final UserInfoRepository userRepo;
 
-    public List<UserInfo> getalluser() {
-        try {
-            return userRepo.findAll();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch all users: " + e.getMessage(), e);
-        }
+    public UserService(UserInfoRepository userRepo) {
+        this.userRepo = userRepo;
     }
 
-    public UserInfo getuser(String useremail) {
-        try {
-            List<UserInfo> users = userRepo.findByUseremail(useremail);
-            if (users.isEmpty()) {
-                throw new RuntimeException("User not found with email: " + useremail);
-            }
-            return users.get(0);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch user by email: " + e.getMessage(), e);
-        }
+    public List<UserInfo> getAllUsers() {
+        return userRepo.findAll();
+    }
+
+    public UserInfo getUser(String useremail) {
+        return userRepo.findByUseremail(useremail)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + useremail));
     }
 
     public UserInfo save(UserInfo userData) {
-        try {
-            return userRepo.save(userData);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to save user: " + e.getMessage(), e);
-        }
+        return userRepo.save(userData);
     }
 
     public UserInfo findById(String id) {
-        try {
-            Optional<UserInfo> user = userRepo.findById(id);
-            return user.orElseThrow(() -> new RuntimeException("User not found with id: " + id));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch user by id: " + e.getMessage(), e);
-        }
+        return userRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
     }
 
-    public void deleteuser(UserInfo user) {
-        try {
-            if (!userRepo.existsById(user.getId())) {
-                throw new RuntimeException("User not found with id: " + user.getId());
-            }
-            userRepo.delete(user);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to delete user: " + e.getMessage(), e);
+    public void deleteUser(UserInfo user) {
+        if (!userRepo.existsById(user.getId())) {
+            throw new RuntimeException("User not found with id: " + user.getId());
         }
+        userRepo.delete(user);
     }
 
     public boolean isUserExists(String email) {
-        try {
-            return !userRepo.findByUseremail(email).isEmpty();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to check user existence: " + e.getMessage(), e);
-        }
+        return !userRepo.findByUseremail(email).isEmpty();
     }
 
     public List<UserInfo> findUsersByRole(UserInfo.Role role) {
-        try {
-            return userRepo.findByUserrole(role);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch users by role: " + e.getMessage(), e);
-        }
+        return userRepo.findByUserrole(role);
     }
 }

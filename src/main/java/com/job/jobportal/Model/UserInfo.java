@@ -1,12 +1,12 @@
 package com.job.jobportal.Model;
 
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import jakarta.validation.constraints.*;
 import java.util.HashMap;
 import java.util.Map;
 

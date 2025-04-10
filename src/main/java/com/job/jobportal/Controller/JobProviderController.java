@@ -1,39 +1,32 @@
 package com.job.jobportal.Controller;
 
-import com.job.jobportal.Config.AwsS3Config;
 import com.job.jobportal.Dtos.*;
 import com.job.jobportal.Model.JobApplication;
+import com.job.jobportal.Model.JobApplication.APPLICATIONSTATUS;
 import com.job.jobportal.Model.JobInfo;
 import com.job.jobportal.Service.JobService;
 import com.job.jobportal.Service.ResumeService;
-
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
 @RequestMapping("/jobprovider")
 public class JobProviderController {
+    private final JobService jobService;
+    private final ResumeService resumeService;
 
-    @Autowired
-    private JobService jobService;
-
-    @Autowired
-    private AwsS3Config awsservice;
-    @Autowired
-    private ResumeService resumeservice;
+    public JobProviderController(JobService jobService, ResumeService resumeService) {
+        this.jobService = jobService;
+        this.resumeService = resumeService;
+    }
 
     @PostMapping("/addjob")
     public ResponseEntity<?> createJob(@RequestBody JobDto jobDto) {
@@ -104,35 +97,40 @@ public class JobProviderController {
         }
     }
 
-    @GetMapping("/view-resume/{useremail}")
-    public ResponseEntity<Map<String, Object>> viewResume(
-            @PathVariable String useremail) {
+    @PostMapping("/accept-application/{email}/{jobid}")
+    public ResponseEntity<?> acceptApplication(@PathVariable String email, @PathVariable String jobid) {
         try {
-            JobApplication application = resumeservice.getUserApplications(useremail).get(0);
-            if (application == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("message", "No resume found"));
+            JobApplication job = resumeService.getUserApplicationForJob(email, jobid);
+            if (job == null) {
+                return ResponseEntity.badRequest().body("Job application not found");
             }
-            log.info(application.getFileurl());
-            Map<String, Object> response = new HashMap<>();
-            response.put("useremail", application.getUseremail());
-            response.put("filename", application.getFilename());
-            response.put("fileType", application.getFiletype());
-            response.put("resumerl", application.getFileurl());
-            response.put("fileSize", application.getFilesize());
-            response.put("uploadDate", application.getUploadDate());
-
-            return ResponseEntity.ok(response);
+            job.setApplicationStatus(APPLICATIONSTATUS.SHORTLISTED);
+            resumeService.save(job);
+            return ResponseEntity.ok("Job application accepted successfully");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch resume"));
+            return ResponseEntity.badRequest().body("Error occurred: " + e.getMessage());
         }
     }
 
-    @GetMapping("/job/getapplicants/{id}")
-    public ResponseEntity<List<UserResponseDto>> getJobApplicants(@PathVariable String id) {
+    @PostMapping("/reject-application/{email}/{jobid}")
+    public ResponseEntity<?> rejectApplication(@PathVariable String email, @PathVariable String jobid) {
         try {
-            JobInfo job = jobService.getById(id);
+            JobApplication job = resumeService.getUserApplicationForJob(email, jobid);
+            if (job == null) {
+                return ResponseEntity.badRequest().body("Job application not found");
+            }
+            job.setApplicationStatus(APPLICATIONSTATUS.REJECTED);
+            resumeService.save(job);
+            return ResponseEntity.ok("Job application rejected");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error occurred: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/job/getapplicants/{jobid}")
+    public ResponseEntity<List<UserResponseDto>> getJobApplicants(@PathVariable String jobid) {
+        try {
+            JobInfo job = jobService.getById(jobid);
             if (job == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -141,7 +139,7 @@ public class JobProviderController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
-            List<UserResponseDto> applicants = jobService.getJobApplicants(id);
+            List<UserResponseDto> applicants = jobService.getJobApplicants(jobid);
             return ResponseEntity.ok(applicants);
         } catch (Exception e) {
             log.error("Error fetching applicants: {}", e.getMessage(), e);
@@ -149,35 +147,52 @@ public class JobProviderController {
         }
     }
 
+    @GetMapping("/view-jobapplication/{useremail}/{jobid}")
+    public ResponseEntity<Map<String, Object>> viewResume(
+            @PathVariable String useremail, @PathVariable String jobid) {
+        try {
+            JobApplication application = resumeService.getUserApplicationForJob(useremail, jobid);
+            if (application == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "No Application found"));
+            }
+            Map<String, Object> response = new HashMap<>();
+            response.put("firstname", application.getFirstname());
+            response.put("lastname", application.getLastname());
+            response.put("useremail", application.getUseremail());
+            response.put("filename", application.getFilename());
+            response.put("fileType", application.getFiletype());
+            response.put("resumeUrl", application.getFileurl());
+            response.put("fileSize", application.getFilesize());
+            response.put("uploadDate", application.getUploadDate());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch resume"));
+        }
+    }
+
     @DeleteMapping("/deletejob/{jobId}")
-    public ResponseEntity<?> deleteJob(@PathVariable("jobId") String jobId) {
+    public ResponseEntity<?> deleteJob(@PathVariable String jobId) {
         try {
             if (jobId == null || jobId.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body("Job ID cannot be empty");
+                return ResponseEntity.badRequest().body("Job ID cannot be empty");
             }
 
-            log.info("Attempting to delete job with ID: {}", jobId);
-
             String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-
             JobInfo job = jobService.getById(jobId);
+
             if (job == null) {
-                log.warn("Job not found with ID: {}", jobId);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Job not found with ID: " + jobId);
+                return ResponseEntity.notFound().build();
             }
 
             if (!currentUserEmail.equals(job.getJobposteruseremail())) {
-                log.warn("Unauthorized delete attempt by {} for job {}", currentUserEmail, jobId);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("You are not authorized to delete this job");
             }
 
             jobService.deleteById(jobId);
-            log.info("Successfully deleted job with ID: {}", jobId);
-
-            return ResponseEntity.ok().body("Job deleted successfully");
+            return ResponseEntity.ok("Job deleted successfully");
 
         } catch (Exception e) {
             log.error("Error deleting job with ID {}: {}", jobId, e.getMessage());

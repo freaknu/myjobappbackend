@@ -1,53 +1,58 @@
 package com.job.jobportal.Controller;
 
-import com.job.jobportal.Config.CustomUserDetailService;
 import com.job.jobportal.Config.JwtUtils;
 import com.job.jobportal.Dtos.*;
 import com.job.jobportal.Model.JobApplication;
 import com.job.jobportal.Model.JobInfo;
 import com.job.jobportal.Model.UserInfo;
 import com.job.jobportal.Service.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
+@Slf4j
 @RestController
 @RequestMapping("/jobseeker")
 @CrossOrigin(origins = "*")
 public class UserController {
-    private static final Logger log = LoggerFactory.getLogger(UserController.class);
+    private final UserService userservice;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
+    private final JobService jobService;
+    private final ResumeService resumeService;
+    private final RedisService redisService;
+    @Autowired
+    private UserDetailsService userdetails;
 
-    @Autowired
-    private RedisService cache;
-    @Autowired
-    private UserService userservice;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private AuthenticationManager authenticationManager;
-    @Autowired
-    private CustomUserDetailService userService;
-    @Autowired
-    private JwtUtils jwtUtils;
-    @Autowired
-    private JobService jobservice;
-
-    @Autowired
-    private ResumeService resumeservice;
+    public UserController(UserService userService, PasswordEncoder passwordEncoder,
+            AuthenticationManager authenticationManager, JwtUtils jwtUtils,
+            JobService jobService, ResumeService resumeService,
+            RedisService redisService) {
+        this.userservice = userService;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.jwtUtils = jwtUtils;
+        this.jobService = jobService;
+        this.resumeService = resumeService;
+        this.redisService = redisService;
+    }
 
     @PostMapping("/auth/signup")
     public ResponseEntity<?> createUser(@RequestBody UserDto userDto) {
@@ -63,7 +68,7 @@ public class UserController {
             newUser.setUserrole(userDto.role());
 
             userservice.save(newUser);
-            cache.delete("users");
+            redisService.delete("users");
 
             return ResponseEntity.ok(new UserResponseDto(
                     newUser.getId(),
@@ -82,34 +87,27 @@ public class UserController {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(useremail, password));
-            UserDetails userDetails = userService.loadUserByUsername(useremail);
-            String token = jwtUtils.generateToken(userDetails);
-            UserInfo user = userservice.getuser(useremail);
-            String role = user != null ? user.getUserrole().name() : "UNKNOWN";
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            UserDetails userdetail = userdetails.loadUserByUsername(useremail);
+            String token = jwtUtils.generateToken(userdetail);
+            UserInfo user = userservice.getUser(useremail);
+            String role = user.getUserrole().name();
 
             return ResponseEntity.ok(Map.of(
                     "token", token,
                     "role", role,
                     "email", useremail));
-        } catch (BadCredentialsException e) {
-            log.error("Invalid credentials: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         } catch (Exception e) {
             log.error("Error during login: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error during login");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
     }
 
-    @GetMapping("/auth/profile")
+    @GetMapping("/profile")
     public ResponseEntity<?> getProfile() {
         try {
             String useremail = SecurityContextHolder.getContext().getAuthentication().getName();
-            UserInfo user = userservice.getuser(useremail);
-
-            if (user == null) {
-                return ResponseEntity.notFound().build();
-            }
-
+            UserInfo user = userservice.getUser(useremail);
             return ResponseEntity.ok(new UserResponseDto(
                     user.getId(),
                     user.getUsername(),
@@ -125,11 +123,7 @@ public class UserController {
     public ResponseEntity<?> updateProfile(@RequestBody UserDto userDto) {
         try {
             String useremail = SecurityContextHolder.getContext().getAuthentication().getName();
-            UserInfo user = userservice.getuser(useremail);
-
-            if (user == null) {
-                return ResponseEntity.notFound().build();
-            }
+            UserInfo user = userservice.getUser(useremail);
 
             if (userDto.username() != null) {
                 user.setUsername(userDto.username());
@@ -139,7 +133,7 @@ public class UserController {
             }
 
             userservice.save(user);
-            cache.delete("users");
+            redisService.delete("users");
 
             return ResponseEntity.ok(new UserResponseDto(
                     user.getId(),
@@ -155,8 +149,7 @@ public class UserController {
     @GetMapping("/jobs")
     public ResponseEntity<List<JobResponseDto>> getAllJobs() {
         try {
-            List<JobInfo> alljobs = jobservice.getAllJobs();
-
+            List<JobInfo> alljobs = jobService.getAllJobs();
             List<JobResponseDto> response = alljobs.stream()
                     .map(job -> new JobResponseDto(
                             job.getJobid(),
@@ -166,7 +159,6 @@ public class UserController {
                             job.getJobdescription(),
                             job.getJobpost()))
                     .collect(Collectors.toList());
-
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching jobs: {}", e.getMessage(), e);
@@ -174,13 +166,12 @@ public class UserController {
         }
     }
 
-    @GetMapping("/jobs/search")
+    @GetMapping("jobs/search")
     public ResponseEntity<List<JobResponseDto>> searchJobs(
             @RequestParam(required = false) String technology,
             @RequestParam(required = false) String keyword) {
         try {
-            List<JobInfo> jobs = jobservice.searchJobs(technology, keyword);
-
+            List<JobInfo> jobs = jobService.searchJobs(technology, keyword);
             List<JobResponseDto> response = jobs.stream()
                     .map(job -> new JobResponseDto(
                             job.getJobid(),
@@ -190,7 +181,6 @@ public class UserController {
                             job.getJobdescription(),
                             job.getJobpost()))
                     .collect(Collectors.toList());
-
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error searching jobs: {}", e.getMessage(), e);
@@ -199,36 +189,44 @@ public class UserController {
     }
 
     @PostMapping("/applyjob/{jobId}")
-    public ResponseEntity<?> applyJob(@PathVariable String jobId, @RequestParam MultipartFile resume) {
+    public ResponseEntity<?> applyJob(@PathVariable String jobId,
+            @RequestParam("resume") MultipartFile resume,
+            @RequestPart("applydetails") ApplyDTO applydetails) {
         try {
-            String useremail = SecurityContextHolder.getContext().getAuthentication().getName();
-            UserInfo user = userservice.getuser(useremail);
-            JobInfo job = jobservice.getById(jobId);
+            String firstname = applydetails.firstname();
+            String lastname = applydetails.lastname();
+            String useremail = applydetails.email() != null ? applydetails.email()
+                    : SecurityContextHolder.getContext().getAuthentication().getName();
+
+            UserInfo user = userservice.getUser(useremail);
+            JobInfo job = jobService.getById(jobId);
 
             if (job == null) {
-                return new ResponseEntity<>("Didn't found job", HttpStatus.CONFLICT);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Job not found");
             }
 
             if (user.getJobs().containsKey(jobId)) {
-                return new ResponseEntity<>("Already applied for this job", HttpStatus.BAD_REQUEST);
+                return ResponseEntity.badRequest().body("Already applied for this job");
             }
 
             if (resume == null || resume.isEmpty()) {
-                return new ResponseEntity<>("Reusume Field is Required", HttpStatus.BAD_REQUEST);
+                return ResponseEntity.badRequest().body("Resume is required");
             }
-            JobApplication application = resumeservice.uploadResume(useremail, resume);
 
+            resumeService.uploadResume(firstname, lastname, jobId, useremail, resume);
             Map<String, String> jobs = user.getJobs();
             jobs.put(jobId, useremail);
             user.setJobs(jobs);
             userservice.save(user);
-            job.getApplicants().add(useremail);
-            jobservice.saveJob(job);
 
-            return new ResponseEntity<>("Application Submitted Successfully", HttpStatus.ACCEPTED);
+            job.getApplicants().add(useremail);
+            jobService.saveJob(job);
+
+            return ResponseEntity.ok("Job applied successfully");
         } catch (Exception e) {
             log.error("Error applying for job: {}", e.getMessage(), e);
-            return new ResponseEntity<>("Error applying for job: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error applying for job: " + e.getMessage());
         }
     }
 
@@ -236,26 +234,21 @@ public class UserController {
     public ResponseEntity<?> getMyApplications() {
         try {
             String useremail = SecurityContextHolder.getContext().getAuthentication().getName();
-            UserInfo user = userservice.getuser(useremail);
-
-            if (user == null) {
-                return ResponseEntity.notFound().build();
-            }
+            UserInfo user = userservice.getUser(useremail);
 
             if (user.getJobs() == null || user.getJobs().isEmpty()) {
                 return ResponseEntity.ok(Collections.emptyList());
             }
 
-            List<JobApplication> resumes = resumeservice.getUserApplications(useremail);
+            List<JobApplication> resumes = resumeService.getUserApplications(useremail);
 
             List<JobApplicationUpload> applications = user.getJobs().keySet().stream()
                     .map(jobId -> {
                         try {
-                            JobInfo job = jobservice.getById(jobId);
-                            if (job == null) {
-                                log.warn("Job not found with ID: {}", jobId);
+                            JobInfo job = jobService.getById(jobId);
+                            if (job == null)
                                 return null;
-                            }
+
                             JobApplication resume = resumes.stream()
                                     .filter(r -> jobId.equals(r.getJobId()))
                                     .findFirst()
@@ -269,7 +262,7 @@ public class UserController {
                                     job.getJobdescription(),
                                     job.getJobpost(),
                                     resume);
-                        } catch (JobService.ServiceException e) {
+                        } catch (Exception e) {
                             log.warn("Error fetching job {}: {}", jobId, e.getMessage());
                             return null;
                         }
@@ -289,8 +282,8 @@ public class UserController {
     public ResponseEntity<?> withdrawApplication(@PathVariable String jobId) {
         try {
             String useremail = SecurityContextHolder.getContext().getAuthentication().getName();
-            UserInfo user = userservice.getuser(useremail);
-            JobInfo job = jobservice.getById(jobId);
+            UserInfo user = userservice.getUser(useremail);
+            JobInfo job = jobService.getById(jobId);
 
             if (job == null) {
                 return ResponseEntity.notFound().build();
@@ -299,10 +292,16 @@ public class UserController {
             if (!user.getJobs().containsKey(jobId)) {
                 return ResponseEntity.badRequest().body("You haven't applied for this job");
             }
-            user.getJobs().remove(jobId);
+
+            Map<String, String> jobs = user.getJobs();
+            jobs.remove(jobId);
+            user.setJobs(jobs);
             userservice.save(user);
-            job.getApplicants().remove(useremail);
-            jobservice.saveJob(job);
+
+            List<String> applicants = job.getApplicants();
+            applicants.remove(useremail);
+            job.setApplicants(applicants);
+            jobService.saveJob(job);
 
             return ResponseEntity.ok(Map.of(
                     "message", "Application withdrawn successfully",
@@ -313,4 +312,20 @@ public class UserController {
                     .body("Error withdrawing application");
         }
     }
+
+    @GetMapping("/get-jobapplication/{jobid}")
+    public ResponseEntity<?> getApplication(@PathVariable String jobid) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String email = auth.getName();
+            JobApplication job = resumeService.getUserApplicationForJob(email, jobid);
+            if (job == null) {
+                return new ResponseEntity<>("Job Didn't Found", HttpStatus.BAD_REQUEST);
+            }
+            return new ResponseEntity<>(job, HttpStatus.OK);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
 }
