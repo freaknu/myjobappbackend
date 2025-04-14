@@ -3,6 +3,9 @@ package com.job.jobportal.Model;
 import java.util.Date;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import com.job.jobportal.Service.AtsScoringService.AtsScoreResult;
+
 import lombok.Data;
 
 @Data
@@ -23,5 +26,6 @@ public class JobApplication {
     private String filetype;
     private Long filesize;
     private Date uploadDate;
+    private AtsScoreResult atsscore;
     private APPLICATIONSTATUS applicationStatus = APPLICATIONSTATUS.NOTAPPLIED;
 }

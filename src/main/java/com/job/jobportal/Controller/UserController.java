@@ -103,48 +103,6 @@ public class UserController {
         }
     }
 
-    @GetMapping("/profile")
-    public ResponseEntity<?> getProfile() {
-        try {
-            String useremail = SecurityContextHolder.getContext().getAuthentication().getName();
-            UserInfo user = userservice.getUser(useremail);
-            return ResponseEntity.ok(new UserResponseDto(
-                    user.getId(),
-                    user.getUsername(),
-                    user.getUseremail(),
-                    user.getUserrole().name()));
-        } catch (Exception e) {
-            log.error("Error fetching profile: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @PutMapping("/profile/update")
-    public ResponseEntity<?> updateProfile(@RequestBody UserDto userDto) {
-        try {
-            String useremail = SecurityContextHolder.getContext().getAuthentication().getName();
-            UserInfo user = userservice.getUser(useremail);
-
-            if (userDto.username() != null) {
-                user.setUsername(userDto.username());
-            }
-            if (userDto.userpassword() != null) {
-                user.setUserpassword(passwordEncoder.encode(userDto.userpassword()));
-            }
-
-            userservice.save(user);
-            redisService.delete("users");
-
-            return ResponseEntity.ok(new UserResponseDto(
-                    user.getId(),
-                    user.getUsername(),
-                    user.getUseremail(),
-                    user.getUserrole().name()));
-        } catch (Exception e) {
-            log.error("Error updating profile: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
 
     @GetMapping("/jobs")
     public ResponseEntity<List<JobResponseDto>> getAllJobs() {
