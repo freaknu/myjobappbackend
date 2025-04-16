@@ -2,28 +2,26 @@ services:
   - type: web
     name: jobportal-backend
     env: docker
-    buildCommand: docker build -t jobportal-backend .
-    startCommand: docker run -p 8080:8080 jobportal-backend
+    dockerfilePath: Dockerfile
     envVars:
       - key: GOOGLE_CLIENT_ID
-        fromDatabase: ${GOOGLE_CLIENT_ID}
+        value: ${GOOGLE_CLIENT_ID}
       - key: GOOGLE_CLIENT_SECRET
-        fromDatabase: ${GOOGLE_CLIENT_SECRET}
+        value: ${GOOGLE_CLIENT_SECRET}
       - key: REDIS_URL
-        fromDatabase: ${REDIS_URL}
+        value: ${REDIS_URL}
       - key: MONGODB_URI
-        fromDatabase: ${MONGODB_URI}
+        value: ${MONGODB_URI}
       - key: AWS_ACCESS_KEY
-        fromDatabase: ${AWS_ACCESS_KEY}
+        value: ${AWS_ACCESS_KEY}
       - key: AWS_SECRET_KEY
-        fromDatabase: ${AWS_SECRET_KEY}
+        value: ${AWS_SECRET_KEY}
       - key: S3_BUCKET
-        fromDatabase: ${S3_BUCKET}
+        value: ${S3_BUCKET}
       - key: APP_SECRET_KEY
-        fromDatabase: ${APP_SECRET_KEY}
+        value: ${APP_SECRET_KEY}
       - key: FRONTEND_URL
-        fromDatabase: ${FRONTEND_URL}
+        value: ${FRONTEND_URL}
     autoDeploy: true
     region: us-west-1
     instanceType: free
-    plan: free
