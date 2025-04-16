@@ -103,7 +103,6 @@ public class UserController {
         }
     }
 
-
     @GetMapping("/jobs")
     public ResponseEntity<List<JobResponseDto>> getAllJobs() {
         try {
@@ -153,9 +152,8 @@ public class UserController {
         try {
             String firstname = applydetails.firstname();
             String lastname = applydetails.lastname();
-            String useremail = applydetails.email() != null ? applydetails.email()
-                    : SecurityContextHolder.getContext().getAuthentication().getName();
-
+            String email = applydetails.email();
+            String useremail = SecurityContextHolder.getContext().getAuthentication().getName();
             UserInfo user = userservice.getUser(useremail);
             JobInfo job = jobService.getById(jobId);
 
@@ -171,13 +169,13 @@ public class UserController {
                 return ResponseEntity.badRequest().body("Resume is required");
             }
 
-            resumeService.uploadResume(firstname, lastname, jobId, useremail, resume);
+            resumeService.uploadResume(firstname, lastname, jobId, email, resume);
             Map<String, String> jobs = user.getJobs();
-            jobs.put(jobId, useremail);
+            jobs.put(jobId, email);
             user.setJobs(jobs);
             userservice.save(user);
 
-            job.getApplicants().add(useremail);
+            job.getApplicants().add(email);
             jobService.saveJob(job);
 
             return ResponseEntity.ok("Job applied successfully");

@@ -18,10 +18,9 @@ spring:
     redis:
       url: ${REDIS_URL}
     mongodb:
-      write-concern: "majority"
-      database: ${SPRING_DATA_MONGODB_DATABASE:Prabhat}
       uri: ${MONGODB_URI}
-      auto-index-creation: ${SPRING_DATA_MONGODB_AUTO_INDEX_CREATION:true}
+      database: ${MONGODB_DB}
+      auto-index-creation: true
 
 cloud:
   aws:
@@ -29,9 +28,9 @@ cloud:
       access-key: ${AWS_ACCESS_KEY}
       secret-key: ${AWS_SECRET_KEY}
     region:
-      static: ${AWS_REGION:eu-north-1}
+      static: eu-north-1
     s3:
-      bucket: ${S3_BUCKET_NAME}
+      bucket: ${S3_BUCKET}
 
 app:
   secret-key: ${APP_SECRET_KEY}
