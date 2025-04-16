@@ -38,6 +38,9 @@ public class SecurityConfig {
                                         auth.requestMatchers("/oauth2/**").permitAll();
                                         auth.requestMatchers("/login/oauth2/**").permitAll();
                                         auth.requestMatchers("/auth/google/url").permitAll();
+                                        auth.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**")
+                                                        .permitAll();
+
                                         auth.requestMatchers("/jobprovider/**").hasAuthority("JOBPROVIDER");
                                         auth.requestMatchers("/jobseeker/**").hasAnyAuthority("JOBSEEKER",
                                                         "JOBPROVIDER");
